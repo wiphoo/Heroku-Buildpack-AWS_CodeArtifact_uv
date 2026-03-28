@@ -72,7 +72,7 @@ Commands:
 
 ```bash
 make
-make help
+make tools
 make check
 make lint
 make test
