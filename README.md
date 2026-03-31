@@ -5,9 +5,9 @@
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=wiphoo_heroku-buildpack-uv-codeartifact&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=wiphoo_heroku-buildpack-uv-codeartifact)
 [![CI](https://github.com/wiphoo/heroku-buildpack-uv-codeartifact/actions/workflows/ci.yml/badge.svg)](https://github.com/wiphoo/heroku-buildpack-uv-codeartifact/actions/workflows/ci.yml)
 
-Classic Heroku buildpack for Cedar-generation apps that fetches an AWS
-CodeArtifact token during build and exposes it to downstream build steps using
-`uv` named-index environment variables.
+`heroku-buildpack-uv-codeartifact` is a classic Heroku buildpack for
+Cedar-generation apps. During build, it fetches an AWS CodeArtifact token and
+exposes it to downstream steps through `uv` named-index environment variables.
 
 This buildpack is intended for Python apps that install private packages from
 AWS CodeArtifact with `uv`.
@@ -26,8 +26,8 @@ Example normalization:
 
 ## Compatibility
 
-This repository is primarily intended for classic Heroku buildpack usage on
-Cedar-generation apps.
+The `heroku-buildpack-uv-codeartifact` repository is intended for classic
+Heroku buildpack usage on Cedar-generation apps.
 
 Detection is strict. The app must contain a `pyproject.toml` file with a
 `[[tool.uv.index]]` block or Heroku will report:
@@ -102,9 +102,9 @@ still belongs in `pyproject.toml`.
 
 ## Local `pack build` usage
 
-`pack build` support in this repository is a local verification harness for the
-buildpack logic. It is not the supported way to consume this repository on
-Heroku Cedar apps.
+`pack build` support in `heroku-buildpack-uv-codeartifact` is a local
+verification harness for the buildpack logic. It is not the supported way to
+consume this buildpack on Heroku Cedar apps.
 
 Example:
 
@@ -122,9 +122,9 @@ For deterministic local testing without real AWS access, the integration
 harness uses the test-only environment override
 `BUILDPACK_TEST_AWS_CODEARTIFACT_TOKEN`.
 
-For Heroku Fir/CNB apps, do not configure this repository as a classic
-Git-URL buildpack. Use Heroku CNB configuration through `project.toml`
-instead.
+For Heroku Fir/CNB apps, do not configure
+`heroku-buildpack-uv-codeartifact` as a classic Git-URL buildpack. Use Heroku
+CNB configuration through `project.toml` instead.
 
 ## Local development
 
@@ -151,15 +151,17 @@ make ci
 
 ## SonarCloud
 
-Pushes and pull requests trigger `.github/workflows/sonarqube.yml`. Create a `SONAR_TOKEN`
-secret in the repository and point it at your SonarCloud token so the workflow can authenticate.
+Pushes and pull requests in `wiphoo/heroku-buildpack-uv-codeartifact` trigger
+`.github/workflows/sonarqube.yml`. Configure a `SONAR_TOKEN` repository secret
+with a SonarCloud token so the workflow can authenticate.
 
 ## Coverage for SonarCloud
 
 `make coverage` runs `test/buildpack.bats` under `kcov`, then converts the raw `kcov`
 Cobertura output into Sonar's generic coverage XML at `coverage/coverage.xml`.
-The Sonar workflow installs `kcov`, runs `make check`, then `make coverage`, and verifies
-that the converted report exists before calling the scan.
+The SonarCloud workflow installs `kcov`, runs `make check`, then
+`make coverage`, and verifies that the converted report exists before calling
+the scan.
 
 Install coverage tooling locally with `sudo apt-get update && sudo apt-get install -y kcov python3`
 before running `make coverage`; `coverage/` is ignored via `.gitignore` so the report stays out of source control.
