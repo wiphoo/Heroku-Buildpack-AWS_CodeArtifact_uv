@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+layers_dir="${1:?layers directory is required}"
+platform_dir="${2:?platform directory is required}"
+plan_path="${3:?plan path is required}"
+app_dir="${CNB_APP_DIR:-${PWD}}"
+
+# platform_dir and plan_path are required positional args by the CNB spec but are not used by this buildpack
+: "${platform_dir}" "${plan_path}"
+
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/common.sh"
+
+if ! app_has_uv_index "${app_dir}"; then
+	log "Skipping: no uv named index found in pyproject.toml"
+	exit 0
+fi
+
+index_name="${UV_CODEARTIFACT_INDEX_NAME:-codeartifact}"
+normalized_index_name="$(normalize_index_name "${index_name}")"
+
+if ! token="$(fetch_codeartifact_token)"; then
+	exit 1
+fi
+
+if ! validate_token "${token}"; then
+	exit 1
+fi
+
+layer_name="codeartifact-env"
+layer_dir="${layers_dir}/${layer_name}"
+layer_toml="${layers_dir}/${layer_name}.toml"
+
+rm -rf "${layer_dir}"
+mkdir -p "${layer_dir}/env.build"
+
+cat >"${layer_toml}" <<'EOF'
+[types]
+build = true
+cache = false
+launch = false
+EOF
+
+printf '%s' "aws" >"${layer_dir}/env.build/UV_INDEX_${normalized_index_name}_USERNAME.override"
+printf '%s' "${token}" >"${layer_dir}/env.build/UV_INDEX_${normalized_index_name}_PASSWORD.override"
+
+log "Configured downstream uv authentication for index ${index_name}"

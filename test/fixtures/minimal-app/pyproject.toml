@@ -1,0 +1,7 @@
+[[tool.uv.index]]
+name = "codeartifact"
+url = "https://example.invalid/simple/"
+
+[project]
+name = "minimal-app"
+version = "0.1.0"

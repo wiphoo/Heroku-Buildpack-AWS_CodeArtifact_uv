@@ -1,0 +1,18 @@
+api = "0.10"
+
+[buildpack]
+id = "com.wiphoo.integration-verifier"
+name = "Integration Verifier"
+version = "0.1.0"
+clear-env = false
+
+[[targets]]
+os = "linux"
+arch = "amd64"
+
+[[targets]]
+os = "linux"
+arch = "arm64"
+
+[[stacks]]
+id = "*"

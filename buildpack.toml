@@ -1,0 +1,19 @@
+api = "0.10"
+
+[buildpack]
+id = "com.wiphoo.aws-codeartifact-uv"
+name = "AWS CodeArtifact for uv"
+version = "0.1.0"
+homepage = "https://github.com/wiphoo/Heroku-Buildpack-AWS_CodeArtifact_UV"
+clear-env = false
+
+[[targets]]
+os = "linux"
+arch = "amd64"
+
+[[targets]]
+os = "linux"
+arch = "arm64"
+
+[[stacks]]
+id = "*"

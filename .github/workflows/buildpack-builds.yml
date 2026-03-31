@@ -1,0 +1,37 @@
+name: Buildpack Builds
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      heroku_stack:
+        description: 'Heroku stack to test (e.g. heroku-24)'
+        required: false
+        default: 'heroku-24'
+
+jobs:
+  buildpack-builds:
+    runs-on: ubuntu-latest
+    env:
+      HEROKU_STACK: ${{ github.event.inputs.heroku_stack || vars.HEROKU_STACK || 'heroku-24' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install pack
+        run: |
+          curl -fsSL --proto '=https' "https://github.com/buildpacks/pack/releases/download/v0.39.1/pack-v0.39.1-linux.tgz" -o /tmp/pack.tgz
+          echo "77109791ec8ad73749bc9efc5ecd3905f49175a5071c50e4be59840041ee4b42  /tmp/pack.tgz" | sha256sum --check
+          sudo tar -C /usr/local/bin -xzf /tmp/pack.tgz pack
+          pack --version
+
+      - name: Run generic integration build
+        env:
+          TEST_BUILDER: paketobuildpacks/builder-jammy-base
+        run: test/integration.bash generic
+
+      - name: Run Heroku integration build
+        run: test/integration.bash heroku

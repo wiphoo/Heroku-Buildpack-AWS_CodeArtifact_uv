@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+buildpack_dir="$(cd "$(dirname "$0")/.." && pwd)"
+source "${buildpack_dir}/lib/common.sh"
+
+build_dir="${1:-}"
+cnb_mode=false
+
+if [[ -z "${build_dir}" ]]; then
+	build_dir="${PWD}"
+	cnb_mode=true
+elif [[ ! -f "${build_dir}/pyproject.toml" ]] && [[ -f "${PWD}/pyproject.toml" ]]; then
+	build_dir="${PWD}"
+	cnb_mode=true
+fi
+
+if ! app_has_uv_index "${build_dir}"; then
+	if [[ "${cnb_mode}" == "true" ]]; then
+		exit 100
+	fi
+
+	exit 1
+fi
+
+if [[ "${cnb_mode}" == "true" ]]; then
+	cat <<'EOF'
+[[provides]]
+name = "aws-codeartifact-uv-auth"
+EOF
+	exit 0
+fi
+
+echo "AWS CodeArtifact uv auth"

@@ -1,0 +1,45 @@
+name: SonarCloud Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  sonarqube:
+    name: SonarQube
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats shellcheck cmake libssl-dev libcurl4-openssl-dev zlib1g-dev binutils-dev libiberty-dev libelf-dev libdw-dev
+          go install mvdan.cc/sh/v3/cmd/shfmt@latest
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+
+      - name: Install kcov from source
+        run: |
+          git clone --depth=1 https://github.com/SimonKagstrom/kcov.git /tmp/kcov
+          cmake -S /tmp/kcov -B /tmp/kcov/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/kcov/build --parallel $(nproc)
+          sudo cmake --install /tmp/kcov/build
+
+      - name: Run tests
+        run: make check
+
+      - name: Run coverage
+        run: make coverage
+
+      - name: Verify coverage report
+        run: test -f coverage/coverage.xml
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v5.2.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
