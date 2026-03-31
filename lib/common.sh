@@ -65,7 +65,6 @@ fetch_codeartifact_token() {
 	require_env "AWS_CODEARTIFACT_DOMAIN_OWNER" || return 1
 	require_env "AWS_CODEARTIFACT_REGION" || return 1
 
-	# Map custom-named credential vars to the names the AWS CLI expects
 	if [[ -n "${AWS_CODEARTIFACT_ACCESS_KEY_ID:-}" ]]; then
 		export AWS_ACCESS_KEY_ID="${AWS_CODEARTIFACT_ACCESS_KEY_ID}"
 	fi
@@ -73,20 +72,23 @@ fetch_codeartifact_token() {
 		export AWS_SECRET_ACCESS_KEY="${AWS_CODEARTIFACT_SECRET_ACCESS_KEY}"
 	fi
 
-	local aws_error token_output
+	local aws_error token_output aws_error_file
+	aws_error_file="$(mktemp)"
 	if ! token_output="$(aws codeartifact get-authorization-token \
 		--domain "${AWS_CODEARTIFACT_DOMAIN}" \
 		--domain-owner "${AWS_CODEARTIFACT_DOMAIN_OWNER}" \
 		--region "${AWS_CODEARTIFACT_REGION}" \
 		--query authorizationToken \
-		--output text 2>/tmp/aws_codeartifact_error.txt)"; then
-		aws_error="$(<"/tmp/aws_codeartifact_error.txt")"
+		--output text 2>"${aws_error_file}")"; then
+		aws_error="$(<"${aws_error_file}")"
+		rm -f "${aws_error_file}"
 		log_error "AWS CLI call failed"
 		if [[ -n "${aws_error}" ]]; then
 			log_error "${aws_error}"
 		fi
 		return 1
 	fi
+	rm -f "${aws_error_file}"
 	printf '%s' "${token_output}"
 }
 
