@@ -6,6 +6,7 @@ build_dir="${1:?build directory is required}"
 cache_dir="${2:?cache directory is required}"
 env_dir="${3:?env directory is required}"
 buildpack_dir="$(cd "$(dirname "$0")/.." && pwd)"
+uv_index_header_pattern='^[[:space:]]*\[\[[[:space:]]*tool\.uv\.index[[:space:]]*\]\]'
 
 log() {
 	echo "-----> $*"
@@ -49,7 +50,7 @@ if [[ ! -f "${build_dir}/pyproject.toml" ]]; then
 	exit 0
 fi
 
-if ! grep -Eq '^\[\[tool\.uv\.index\]\]' "${build_dir}/pyproject.toml"; then
+if ! grep -Eq "${uv_index_header_pattern}" "${build_dir}/pyproject.toml"; then
 	log "Skipping: no uv named index found in pyproject.toml"
 	exit 0
 fi
@@ -62,7 +63,6 @@ fi
 require_env "AWS_CODEARTIFACT_DOMAIN"
 require_env "AWS_CODEARTIFACT_DOMAIN_OWNER"
 require_env "AWS_CODEARTIFACT_REGION"
-require_env "AWS_CODEARTIFACT_REPOSITORY"
 
 index_name="${UV_CODEARTIFACT_INDEX_NAME:-codeartifact}"
 normalized_index_name="$(normalize_index_name "${index_name}")"

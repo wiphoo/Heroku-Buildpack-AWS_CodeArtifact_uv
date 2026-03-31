@@ -34,7 +34,6 @@ designed to run after `heroku-buildpack-awscli`.
 - `AWS_CODEARTIFACT_DOMAIN`
 - `AWS_CODEARTIFACT_DOMAIN_OWNER`
 - `AWS_CODEARTIFACT_REGION`
-- `AWS_CODEARTIFACT_REPOSITORY`
 
 ## Optional config vars
 

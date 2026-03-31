@@ -3,12 +3,13 @@
 set -euo pipefail
 
 build_dir="${1:?build directory is required}"
+uv_index_header_pattern='^[[:space:]]*\[\[[[:space:]]*tool\.uv\.index[[:space:]]*\]\]'
 
 if [[ ! -f "${build_dir}/pyproject.toml" ]]; then
 	exit 1
 fi
 
-if ! grep -Eq '^\[\[tool\.uv\.index\]\]' "${build_dir}/pyproject.toml"; then
+if ! grep -Eq "${uv_index_header_pattern}" "${build_dir}/pyproject.toml"; then
 	exit 1
 fi
 

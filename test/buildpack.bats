@@ -18,8 +18,10 @@ teardown() {
 }
 
 write_pyproject_with_uv_index() {
-	cat >"${build_dir}/pyproject.toml" <<'EOF'
-[[tool.uv.index]]
+	local header="${1:-[[tool.uv.index]]}"
+
+	cat >"${build_dir}/pyproject.toml" <<EOF
+${header}
 name = "codeartifact"
 url = "https://example.invalid/simple/"
 EOF
@@ -59,6 +61,24 @@ EOF
 	[ "${output}" = "AWS CodeArtifact uv auth" ]
 }
 
+@test "detect succeeds when uv index header contains valid TOML whitespace" {
+	write_pyproject_with_uv_index "[[ tool.uv.index ]]"
+
+	run "${repo_root}/bin/detect" "${build_dir}"
+
+	[ "${status}" -eq 0 ]
+	[ "${output}" = "AWS CodeArtifact uv auth" ]
+}
+
+@test "detect succeeds when uv index header is indented" {
+	write_pyproject_with_uv_index "  [[tool.uv.index]]"
+
+	run "${repo_root}/bin/detect" "${build_dir}"
+
+	[ "${status}" -eq 0 ]
+	[ "${output}" = "AWS CodeArtifact uv auth" ]
+}
+
 @test "detect fails when pyproject.toml is missing" {
 	run "${repo_root}/bin/detect" "${build_dir}"
 
@@ -73,7 +93,7 @@ EOF
 	[ "${status}" -eq 1 ]
 }
 
-@test "compile fails when a required env var is missing" {
+@test "compile succeeds without AWS_CODEARTIFACT_REPOSITORY" {
 	write_pyproject_with_uv_index
 	write_aws_stub
 	write_env_file "AWS_CODEARTIFACT_DOMAIN" "example"
@@ -82,8 +102,8 @@ EOF
 
 	PATH="${stub_bin_dir}:${PATH}" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
 
-	[ "${status}" -eq 1 ]
-	[[ "${output}" == *"Missing required config var: AWS_CODEARTIFACT_REPOSITORY"* ]]
+	[ "${status}" -eq 0 ]
+	[ -f "${repo_root}/export" ]
 }
 
 @test "compile fails when aws CLI is unavailable" {
@@ -91,7 +111,6 @@ EOF
 	write_env_file "AWS_CODEARTIFACT_DOMAIN" "example"
 	write_env_file "AWS_CODEARTIFACT_DOMAIN_OWNER" "123456789012"
 	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
-	write_env_file "AWS_CODEARTIFACT_REPOSITORY" "private"
 
 	PATH="/usr/bin:/bin" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
 
@@ -105,7 +124,6 @@ EOF
 	write_env_file "AWS_CODEARTIFACT_DOMAIN" "example"
 	write_env_file "AWS_CODEARTIFACT_DOMAIN_OWNER" "123456789012"
 	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
-	write_env_file "AWS_CODEARTIFACT_REPOSITORY" "private"
 
 	PATH="${stub_bin_dir}:${PATH}" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
 
@@ -117,13 +135,25 @@ EOF
 	[ "${status}" -eq 0 ]
 }
 
+@test "compile accepts uv index headers with valid TOML whitespace" {
+	write_pyproject_with_uv_index "[[ tool.uv.index ]]"
+	write_aws_stub
+	write_env_file "AWS_CODEARTIFACT_DOMAIN" "example"
+	write_env_file "AWS_CODEARTIFACT_DOMAIN_OWNER" "123456789012"
+	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
+
+	PATH="${stub_bin_dir}:${PATH}" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
+
+	[ "${status}" -eq 0 ]
+	[ -f "${repo_root}/export" ]
+}
+
 @test "compile normalizes custom index names" {
 	write_pyproject_with_uv_index
 	write_aws_stub
 	write_env_file "AWS_CODEARTIFACT_DOMAIN" "example"
 	write_env_file "AWS_CODEARTIFACT_DOMAIN_OWNER" "123456789012"
 	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
-	write_env_file "AWS_CODEARTIFACT_REPOSITORY" "private"
 	write_env_file "UV_CODEARTIFACT_INDEX_NAME" "private-prod"
 
 	PATH="${stub_bin_dir}:${PATH}" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
