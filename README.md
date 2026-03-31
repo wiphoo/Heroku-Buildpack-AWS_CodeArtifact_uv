@@ -1,8 +1,8 @@
-# Heroku Buildpack: AWS CodeArtifact for `uv`
+# AWS CodeArtifact for `uv`
 
-Classic Heroku buildpack that fetches an AWS CodeArtifact token during build
-and exposes it to downstream Python build steps using `uv` named-index
-environment variables.
+Cloud Native Buildpack that fetches an AWS CodeArtifact token during build and
+exposes it to downstream build steps using `uv` named-index environment
+variables.
 
 This buildpack is intended for Python apps that install private packages from
 AWS CodeArtifact with `uv`.
@@ -19,15 +19,7 @@ Example normalization:
 - `codeartifact` -> `UV_INDEX_CODEARTIFACT_USERNAME`
 - `private-prod` -> `UV_INDEX_PRIVATE_PROD_USERNAME`
 
-## Intended buildpack order
-
-1. `https://github.com/timanovsky/subdir-heroku-buildpack`
-2. `https://github.com/heroku/heroku-buildpack-awscli.git`
-3. `https://github.com/wiphoo/Heroku-Buildpack-AWS_CodeArtifact_UV.git`
-4. `heroku/python`
-
-AWS credentials must already be available to the AWS CLI. This buildpack is
-designed to run after `heroku-buildpack-awscli`.
+AWS credentials must already be available to the AWS CLI during build.
 
 ## Required config vars
 
@@ -59,6 +51,24 @@ dependencies = ["private-package"]
 The buildpack only handles authentication. Your named `uv` index definition
 still belongs in `pyproject.toml`.
 
+## Local `pack build` usage
+
+Example:
+
+```bash
+pack build example-app \
+  --path /path/to/app \
+  --builder heroku/builder:24 \
+  --buildpack /path/to/Heroku-Buildpack-AWS_CodeArtifact_UV \
+  --env AWS_CODEARTIFACT_DOMAIN=example \
+  --env AWS_CODEARTIFACT_DOMAIN_OWNER=123456789012 \
+  --env AWS_CODEARTIFACT_REGION=us-east-1
+```
+
+For deterministic local testing without real AWS access, the integration
+harness uses the test-only environment override
+`BUILDPACK_TEST_AWS_CODEARTIFACT_TOKEN`.
+
 ## Local development
 
 Requirements:
@@ -66,6 +76,8 @@ Requirements:
 - `shellcheck`
 - `shfmt`
 - `bats`
+- `pack`
+- `docker`
 
 Commands:
 
@@ -75,5 +87,7 @@ make tools
 make check
 make lint
 make test
+make test-integration-generic
+make test-integration-heroku
 make ci
 ```

@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+layers_dir="${1:?layers directory is required}"
+platform_dir="${2:?platform directory is required}"
+plan_path="${3:?plan path is required}"
+
+if [[ -n "${platform_dir}" && -n "${plan_path}" ]]; then
+	:
+fi
+
+normalize_index_name() {
+	printf '%s' "${1}" |
+		tr '[:lower:]' '[:upper:]' |
+		sed -E 's/[^A-Z0-9]+/_/g; s/^_+//; s/_+$//'
+}
+
+index_name="${UV_CODEARTIFACT_INDEX_NAME:-codeartifact}"
+normalized_index_name="$(normalize_index_name "${index_name}")"
+username_var="UV_INDEX_${normalized_index_name}_USERNAME"
+password_var="UV_INDEX_${normalized_index_name}_PASSWORD"
+
+if [[ -z "${!username_var:-}" || -z "${!password_var:-}" ]]; then
+	echo "Expected downstream uv auth variables were not exported" >&2
+	exit 1
+fi
+
+layer_name="smoke-launch"
+layer_dir="${layers_dir}/${layer_name}"
+layer_toml="${layers_dir}/${layer_name}.toml"
+
+rm -rf "${layer_dir}"
+mkdir -p "${layer_dir}/bin"
+
+cat >"${layer_toml}" <<'EOF'
+[types]
+build = false
+cache = false
+launch = true
+EOF
+
+cat >"${layer_dir}/bin/run-smoke" <<'EOF'
+#!/bin/sh
+printf '%s\n' "integration-ok"
+EOF
+chmod +x "${layer_dir}/bin/run-smoke"
+
+cat >"${layers_dir}/launch.toml" <<'EOF'
+[[processes]]
+type = "web"
+command = ["run-smoke"]
+default = true
+EOF

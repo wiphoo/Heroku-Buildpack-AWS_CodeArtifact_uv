@@ -6,9 +6,13 @@ setup() {
 	build_dir="${test_tmp}/build"
 	cache_dir="${test_tmp}/cache"
 	env_dir="${test_tmp}/env"
+	layers_dir="${test_tmp}/layers"
+	platform_dir="${test_tmp}/platform"
+	plan_path="${test_tmp}/plan.toml"
 	stub_bin_dir="${test_tmp}/bin"
+	test_token_env_var="BUILDPACK_TEST_AWS_CODEARTIFACT_TOKEN"
 
-	mkdir -p "${build_dir}" "${cache_dir}" "${env_dir}" "${stub_bin_dir}"
+	mkdir -p "${build_dir}" "${cache_dir}" "${env_dir}" "${layers_dir}" "${platform_dir}" "${stub_bin_dir}"
 	rm -f "${repo_root}/export"
 }
 
@@ -50,6 +54,17 @@ set -euo pipefail
 printf '%s\n' 'stub-token-123'
 EOF
 	chmod +x "${stub_bin_dir}/aws"
+}
+
+run_compile() {
+	PATH="${stub_bin_dir}:${PATH}" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
+}
+
+run_build() {
+	run env \
+		PATH="${stub_bin_dir}:${PATH}" \
+		CNB_APP_DIR="${build_dir}" \
+		"${repo_root}/bin/build" "${layers_dir}" "${platform_dir}" "${plan_path}"
 }
 
 @test "detect succeeds when pyproject.toml contains a uv index block" {
@@ -100,7 +115,7 @@ EOF
 	write_env_file "AWS_CODEARTIFACT_DOMAIN_OWNER" "123456789012"
 	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
 
-	PATH="${stub_bin_dir}:${PATH}" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
+	run_compile
 
 	[ "${status}" -eq 0 ]
 	[ -f "${repo_root}/export" ]
@@ -125,7 +140,7 @@ EOF
 	write_env_file "AWS_CODEARTIFACT_DOMAIN_OWNER" "123456789012"
 	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
 
-	PATH="${stub_bin_dir}:${PATH}" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
+	run_compile
 
 	[ "${status}" -eq 0 ]
 	[ -f "${repo_root}/export" ]
@@ -142,7 +157,7 @@ EOF
 	write_env_file "AWS_CODEARTIFACT_DOMAIN_OWNER" "123456789012"
 	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
 
-	PATH="${stub_bin_dir}:${PATH}" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
+	run_compile
 
 	[ "${status}" -eq 0 ]
 	[ -f "${repo_root}/export" ]
@@ -156,11 +171,87 @@ EOF
 	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
 	write_env_file "UV_CODEARTIFACT_INDEX_NAME" "private-prod"
 
-	PATH="${stub_bin_dir}:${PATH}" run "${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
+	run_compile
 
 	[ "${status}" -eq 0 ]
 	run grep -F "export UV_INDEX_PRIVATE_PROD_USERNAME=aws" "${repo_root}/export"
 	[ "${status}" -eq 0 ]
 	run grep -F "export UV_INDEX_PRIVATE_PROD_PASSWORD=stub-token-123" "${repo_root}/export"
 	[ "${status}" -eq 0 ]
+}
+
+@test "cnb detect succeeds when run from an app directory" {
+	write_pyproject_with_uv_index
+
+	pushd "${build_dir}" >/dev/null
+	run "${repo_root}/bin/detect" "${platform_dir}"
+	popd >/dev/null
+
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *'[[provides]]'* ]]
+}
+
+@test "cnb detect fails with exit 100 when no uv index is present" {
+	write_pyproject_without_uv_index
+
+	pushd "${build_dir}" >/dev/null
+	run "${repo_root}/bin/detect" "${platform_dir}"
+	popd >/dev/null
+
+	[ "${status}" -eq 100 ]
+}
+
+@test "build fails when aws CLI is unavailable and no test token is provided" {
+	write_pyproject_with_uv_index
+	run env PATH="/usr/bin:/bin" CNB_APP_DIR="${build_dir}" "${repo_root}/bin/build" "${layers_dir}" "${platform_dir}" "${plan_path}"
+
+	[ "${status}" -eq 1 ]
+	[[ "${output}" == *"AWS CLI is required but was not found on PATH"* ]]
+}
+
+@test "build succeeds with a test token override and writes downstream env files" {
+	write_pyproject_with_uv_index
+
+	run env \
+		CNB_APP_DIR="${build_dir}" \
+		"${test_token_env_var}=test-token-456" \
+		"${repo_root}/bin/build" "${layers_dir}" "${platform_dir}" "${plan_path}"
+
+	[ "${status}" -eq 0 ]
+	run cat "${layers_dir}/codeartifact-env/env.build/UV_INDEX_CODEARTIFACT_USERNAME.override"
+	[ "${status}" -eq 0 ]
+	[ "${output}" = "aws" ]
+	run cat "${layers_dir}/codeartifact-env/env.build/UV_INDEX_CODEARTIFACT_PASSWORD.override"
+	[ "${status}" -eq 0 ]
+	[ "${output}" = "test-token-456" ]
+}
+
+@test "build normalizes custom index names for downstream env files" {
+	write_pyproject_with_uv_index
+
+	run env \
+		CNB_APP_DIR="${build_dir}" \
+		UV_CODEARTIFACT_INDEX_NAME="private-prod" \
+		"${test_token_env_var}=test-token-456" \
+		"${repo_root}/bin/build" "${layers_dir}" "${platform_dir}" "${plan_path}"
+
+	[ "${status}" -eq 0 ]
+	run cat "${layers_dir}/codeartifact-env/env.build/UV_INDEX_PRIVATE_PROD_USERNAME.override"
+	[ "${status}" -eq 0 ]
+	[ "${output}" = "aws" ]
+	run cat "${layers_dir}/codeartifact-env/env.build/UV_INDEX_PRIVATE_PROD_PASSWORD.override"
+	[ "${status}" -eq 0 ]
+	[ "${output}" = "test-token-456" ]
+}
+
+@test "build fails when the test token override is empty" {
+	write_pyproject_with_uv_index
+
+	run env \
+		CNB_APP_DIR="${build_dir}" \
+		"${test_token_env_var}=" \
+		"${repo_root}/bin/build" "${layers_dir}" "${platform_dir}" "${plan_path}"
+
+	[ "${status}" -eq 1 ]
+	[[ "${output}" == *"Failed to fetch a valid AWS CodeArtifact authorization token"* ]]
 }

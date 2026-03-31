@@ -2,15 +2,31 @@
 
 set -euo pipefail
 
-build_dir="${1:?build directory is required}"
-uv_index_header_pattern='^[[:space:]]*\[\[[[:space:]]*tool\.uv\.index[[:space:]]*\]\]'
+buildpack_dir="$(cd "$(dirname "$0")/.." && pwd)"
+source "${buildpack_dir}/lib/common.sh"
 
-if [[ ! -f "${build_dir}/pyproject.toml" ]]; then
+build_dir="${1:-${PWD}}"
+cnb_mode=false
+
+if [[ -f "${PWD}/pyproject.toml" ]]; then
+	build_dir="${PWD}"
+	cnb_mode=true
+fi
+
+if ! app_has_uv_index "${build_dir}"; then
+	if [[ "${cnb_mode}" == "true" ]]; then
+		exit 100
+	fi
+
 	exit 1
 fi
 
-if ! grep -Eq "${uv_index_header_pattern}" "${build_dir}/pyproject.toml"; then
-	exit 1
+if [[ "${cnb_mode}" == "true" ]]; then
+	cat <<'EOF'
+[[provides]]
+name = "aws-codeartifact-uv-auth"
+EOF
+	exit 0
 fi
 
 echo "AWS CodeArtifact uv auth"
