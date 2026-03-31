@@ -148,3 +148,9 @@ make ci
 
 Pushes and pull requests trigger `.github/workflows/sonarqube.yml`. Create a `SONAR_TOKEN`
 secret in the repository and point it at your SonarCloud token so the workflow can authenticate.
+
+## Coverage for SonarCloud
+
+Before the Sonar job runs, generate an XML coverage report (e.g., `coverage xml` or `uv run coverage xml`)
+and place it at `coverage.xml` in the repository root. SonarCloud reads that report via
+`sonar.python.coverage.reportPaths=coverage.xml` in `sonar-project.properties`.
