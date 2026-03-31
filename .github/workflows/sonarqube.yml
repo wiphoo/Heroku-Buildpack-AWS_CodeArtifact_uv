@@ -18,7 +18,7 @@ jobs:
       - name: Install tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y bats shellcheck cmake libssl-dev libcurl4-openssl-dev zlib1g-dev binutils-dev libiberty-dev
+          sudo apt-get install -y bats shellcheck cmake libssl-dev libcurl4-openssl-dev zlib1g-dev binutils-dev libiberty-dev libelf-dev libdw-dev
           go install mvdan.cc/sh/v3/cmd/shfmt@latest
           echo "$HOME/go/bin" >> "$GITHUB_PATH"
 
