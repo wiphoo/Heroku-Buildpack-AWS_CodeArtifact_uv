@@ -1,5 +1,10 @@
 # AWS CodeArtifact for `uv`
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=wiphoo_heroku-buildpack-uv-codeartifact&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=wiphoo_heroku-buildpack-uv-codeartifact)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=wiphoo_heroku-buildpack-uv-codeartifact&metric=coverage)](https://sonarcloud.io/summary/new_code?id=wiphoo_heroku-buildpack-uv-codeartifact)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=wiphoo_heroku-buildpack-uv-codeartifact&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=wiphoo_heroku-buildpack-uv-codeartifact)
+[![CI](https://github.com/wiphoo/heroku-buildpack-uv-codeartifact/actions/workflows/ci.yml/badge.svg)](https://github.com/wiphoo/heroku-buildpack-uv-codeartifact/actions/workflows/ci.yml)
+
 Classic Heroku buildpack for Cedar-generation apps that fetches an AWS
 CodeArtifact token during build and exposes it to downstream build steps using
 `uv` named-index environment variables.
