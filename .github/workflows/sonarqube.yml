@@ -1,14 +1,9 @@
-name: Build
+name: Build SonarQube Scan
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
 
 jobs:
   sonarqube:
@@ -21,7 +16,7 @@ jobs:
           fetch-depth: 0
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
