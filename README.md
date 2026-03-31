@@ -151,7 +151,10 @@ secret in the repository and point it at your SonarCloud token so the workflow c
 
 ## Coverage for SonarCloud
 
-This project is not a Python app, so SonarCloud coverage is not currently generated.
-The Sonar workflow simply runs `make check` before calling the Sonar scan, which
-captures lint/test validation. Once a coverage report becomes available, you can
-document it here and update `sonar-project.properties` accordingly.
+`make coverage` runs `test/buildpack.bats` under `kcov`, then converts the raw `kcov`
+Cobertura output into Sonar's generic coverage XML at `coverage/coverage.xml`.
+The Sonar workflow installs `kcov`, runs `make check`, then `make coverage`, and verifies
+that the converted report exists before calling the scan.
+
+Install coverage tooling locally with `sudo apt-get update && sudo apt-get install -y kcov python3`
+before running `make coverage`; `coverage/` is ignored via `.gitignore` so the report stays out of source control.

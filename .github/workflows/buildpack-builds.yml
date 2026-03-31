@@ -4,12 +4,18 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      heroku_stack:
+        description: 'Heroku stack to test (e.g. heroku-24)'
+        required: false
+        default: 'heroku-24'
 
 jobs:
   buildpack-builds:
     runs-on: ubuntu-latest
     env:
-      HEROKU_STACK: ${{ vars.HEROKU_STACK }}
+      HEROKU_STACK: ${{ github.event.inputs.heroku_stack || vars.HEROKU_STACK || 'heroku-24' }}
 
     steps:
       - name: Checkout
