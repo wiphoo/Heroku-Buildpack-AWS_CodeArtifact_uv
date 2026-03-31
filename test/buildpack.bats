@@ -244,6 +244,23 @@ EOF
 	[[ "${output}" == *"AWS_SESSION_TOKEN is set (temporary credentials)"* ]]
 }
 
+@test "compile logs fallback message when no access key is set" {
+	write_pyproject_with_uv_index
+	write_aws_stub
+	write_env_file "AWS_CODEARTIFACT_DOMAIN" "example"
+	write_env_file "AWS_CODEARTIFACT_DOMAIN_OWNER" "123456789012"
+	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
+
+	run env \
+		-u AWS_ACCESS_KEY_ID \
+		-u AWS_CODEARTIFACT_ACCESS_KEY_ID \
+		PATH="${stub_bin_dir}:${PATH}" \
+		"${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
+
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *"no access key set — relying on instance profile or ~/.aws"* ]]
+}
+
 @test "compile uses AWS_CODEARTIFACT_ACCESS_KEY_ID when standard key is absent" {
 	write_pyproject_with_uv_index
 	write_aws_stub
