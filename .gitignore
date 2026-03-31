@@ -3,3 +3,4 @@ export
 .claude/
 .claude-flow/
 .mcp.json
+.vscode/
