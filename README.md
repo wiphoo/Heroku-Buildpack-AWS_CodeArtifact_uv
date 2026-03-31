@@ -49,6 +49,30 @@ buildpack, not used as a replacement for it.
 - `AWS_CODEARTIFACT_DOMAIN_OWNER`
 - `AWS_CODEARTIFACT_REGION`
 
+## AWS credentials
+
+The buildpack uses the AWS CLI to call `codeartifact get-authorization-token`.
+You must supply credentials via Heroku config vars before the build runs.
+
+**Option A — custom-namespaced vars (recommended)**
+
+Use these to avoid conflicts with other buildpacks or tools that read the
+standard `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` names:
+
+- `AWS_CODEARTIFACT_ACCESS_KEY_ID`
+- `AWS_CODEARTIFACT_SECRET_ACCESS_KEY`
+
+The buildpack maps these to the standard names before calling the AWS CLI.
+
+**Option B — standard AWS vars**
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_SESSION_TOKEN` _(required only when using temporary/assumed-role credentials)_
+
+When `AWS_CODEARTIFACT_ACCESS_KEY_ID` is set it takes precedence over
+`AWS_ACCESS_KEY_ID`.
+
 ## Optional config vars
 
 - `UV_CODEARTIFACT_INDEX_NAME`
