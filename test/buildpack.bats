@@ -220,7 +220,10 @@ EOF
 	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
 	write_env_file "AWS_ACCESS_KEY_ID" "AKIAIOSFODNN7EXAMPLE"
 
-	run_compile
+	# Unset custom credential var so only the standard AWS_ACCESS_KEY_ID is detected
+	run env -u AWS_CODEARTIFACT_ACCESS_KEY_ID \
+		PATH="${stub_bin_dir}:${PATH}" \
+		"${repo_root}/bin/compile" "${build_dir}" "${cache_dir}" "${env_dir}"
 
 	[ "${status}" -eq 0 ]
 	[[ "${output}" == *"AWS_ACCESS_KEY_ID is set (key ID: AKIAIOSF...)"* ]]
@@ -239,6 +242,21 @@ EOF
 
 	[ "${status}" -eq 0 ]
 	[[ "${output}" == *"AWS_SESSION_TOKEN is set (temporary credentials)"* ]]
+}
+
+@test "compile uses AWS_CODEARTIFACT_ACCESS_KEY_ID when standard key is absent" {
+	write_pyproject_with_uv_index
+	write_aws_stub
+	write_env_file "AWS_CODEARTIFACT_DOMAIN" "example"
+	write_env_file "AWS_CODEARTIFACT_DOMAIN_OWNER" "123456789012"
+	write_env_file "AWS_CODEARTIFACT_REGION" "us-east-1"
+	write_env_file "AWS_CODEARTIFACT_ACCESS_KEY_ID" "AKIACODEARTIFACT1234"
+	write_env_file "AWS_CODEARTIFACT_SECRET_ACCESS_KEY" "supersecret"
+
+	run_compile
+
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *"AWS_CODEARTIFACT_ACCESS_KEY_ID is set (key ID: AKIACODE...)"* ]]
 }
 
 @test "compile surfaces AWS CLI error message when token fetch fails" {

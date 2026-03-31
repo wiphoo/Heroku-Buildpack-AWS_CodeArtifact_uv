@@ -65,6 +65,14 @@ fetch_codeartifact_token() {
 	require_env "AWS_CODEARTIFACT_DOMAIN_OWNER" || return 1
 	require_env "AWS_CODEARTIFACT_REGION" || return 1
 
+	# Map custom-named credential vars to the names the AWS CLI expects
+	if [[ -n "${AWS_CODEARTIFACT_ACCESS_KEY_ID:-}" ]]; then
+		export AWS_ACCESS_KEY_ID="${AWS_CODEARTIFACT_ACCESS_KEY_ID}"
+	fi
+	if [[ -n "${AWS_CODEARTIFACT_SECRET_ACCESS_KEY:-}" ]]; then
+		export AWS_SECRET_ACCESS_KEY="${AWS_CODEARTIFACT_SECRET_ACCESS_KEY}"
+	fi
+
 	local aws_error token_output
 	if ! token_output="$(aws codeartifact get-authorization-token \
 		--domain "${AWS_CODEARTIFACT_DOMAIN}" \
@@ -91,13 +99,23 @@ log_aws_context() {
 	log "  domain-owner: ${AWS_CODEARTIFACT_DOMAIN_OWNER:-<not set>}"
 	log "  region:       ${AWS_CODEARTIFACT_REGION:-<not set>}"
 
-	if [[ -n "${AWS_ACCESS_KEY_ID:-}" ]]; then
-		log "  credentials:  AWS_ACCESS_KEY_ID is set (key ID: ${AWS_ACCESS_KEY_ID:0:8}...)"
+	local key_id=""
+	local key_source=""
+	if [[ -n "${AWS_CODEARTIFACT_ACCESS_KEY_ID:-}" ]]; then
+		key_id="${AWS_CODEARTIFACT_ACCESS_KEY_ID}"
+		key_source="AWS_CODEARTIFACT_ACCESS_KEY_ID"
+	elif [[ -n "${AWS_ACCESS_KEY_ID:-}" ]]; then
+		key_id="${AWS_ACCESS_KEY_ID}"
+		key_source="AWS_ACCESS_KEY_ID"
+	fi
+
+	if [[ -n "${key_id}" ]]; then
+		log "  credentials:  ${key_source} is set (key ID: ${key_id:0:8}...)"
 		if [[ -n "${AWS_SESSION_TOKEN:-}" ]]; then
 			log "  credentials:  AWS_SESSION_TOKEN is set (temporary credentials)"
 		fi
 	else
-		log "  credentials:  AWS_ACCESS_KEY_ID not set — relying on instance profile or ~/.aws"
+		log "  credentials:  no access key set — relying on instance profile or ~/.aws"
 	fi
 }
 
