@@ -43,7 +43,10 @@ load_env_dir() {
 	[[ -d "${env_dir}" ]] || return 0
 
 	while IFS= read -r -d '' env_file; do
-		export "$(basename "${env_file}")=$(<"${env_file}")"
+		local varname value
+		varname="$(basename "${env_file}")"
+		value="$(<"${env_file}")"
+		export "${varname}=${value}"
 	done < <(find "${env_dir}" -maxdepth 1 -type f -print0)
 }
 

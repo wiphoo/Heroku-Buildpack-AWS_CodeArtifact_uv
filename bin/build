@@ -7,9 +7,8 @@ platform_dir="${2:?platform directory is required}"
 plan_path="${3:?plan path is required}"
 app_dir="${CNB_APP_DIR:-${PWD}}"
 
-if [[ -n "${platform_dir}" && -n "${plan_path}" ]]; then
-	:
-fi
+# platform_dir and plan_path are required positional args by the CNB spec but are not used by this buildpack
+: "${platform_dir}" "${plan_path}"
 
 source "$(cd "$(dirname "$0")/.." && pwd)/lib/common.sh"
 

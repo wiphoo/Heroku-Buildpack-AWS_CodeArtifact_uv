@@ -6,10 +6,11 @@ layers_dir="${1:?layers directory is required}"
 platform_dir="${2:?platform directory is required}"
 plan_path="${3:?plan path is required}"
 
-if [[ -n "${platform_dir}" && -n "${plan_path}" ]]; then
-	:
-fi
+# platform_dir and plan_path are required positional args by the CNB spec but are not used by this buildpack
+: "${platform_dir}" "${plan_path}"
 
+# normalize_index_name is duplicated from lib/common.sh because this buildpack
+# runs as an independent CNB container and cannot source files from the main buildpack.
 normalize_index_name() {
 	printf '%s' "${1}" |
 		tr '[:lower:]' '[:upper:]' |

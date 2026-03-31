@@ -8,9 +8,8 @@ env_dir="${3:?env directory is required}"
 buildpack_dir="$(cd "$(dirname "$0")/.." && pwd)"
 source "${buildpack_dir}/lib/common.sh"
 
-if [[ -n "${cache_dir}" ]]; then
-	:
-fi
+# cache_dir is a required positional arg by the Heroku buildpack spec but is not used by this buildpack
+: "${cache_dir}"
 
 load_env_dir "${env_dir}"
 
