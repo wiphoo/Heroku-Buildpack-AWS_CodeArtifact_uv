@@ -151,6 +151,7 @@ secret in the repository and point it at your SonarCloud token so the workflow c
 
 ## Coverage for SonarCloud
 
-Before the Sonar job runs, generate an XML coverage report (e.g., `coverage xml` or `uv run coverage xml`)
-and place it at `coverage.xml` in the repository root. SonarCloud reads that report via
-`sonar.python.coverage.reportPaths=coverage.xml` in `sonar-project.properties`.
+This project is not a Python app, so SonarCloud coverage is not currently generated.
+The Sonar workflow simply runs `make check` before calling the Sonar scan, which
+captures lint/test validation. Once a coverage report becomes available, you can
+document it here and update `sonar-project.properties` accordingly.
